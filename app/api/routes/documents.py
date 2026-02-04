@@ -4,7 +4,14 @@ import os
 import uuid
 from typing import List
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Header,
+    HTTPException,
+    UploadFile,
+)
 from fastapi import status
 from sqlmodel import Session
 
@@ -17,8 +24,10 @@ router = APIRouter(tags=["documents"])
 settings = get_settings()
 
 
-def _require_api_key(x_api_key: str = File(..., alias="X-API-Key")) -> str:  # type: ignore[assignment]
-    # NOTE: This is kept simple; in a full implementation we'd use Header dependencies.
+def _require_api_key(
+    x_api_key: str = Header(..., alias="X-API-Key"),
+) -> str:
+    # NOTE: This is kept simple; in a full implementation we'd use a shared dependency module.
     if x_api_key != settings.api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -33,7 +42,7 @@ def _require_api_key(x_api_key: str = File(..., alias="X-API-Key")) -> str:  # t
 )
 async def upload_document(
     file: UploadFile = File(...),
-    x_workspace_id: str = File(..., alias="X-Workspace-Id"),  # type: ignore[assignment]
+    x_workspace_id: str = Header(..., alias="X-Workspace-Id"),
     _: str = Depends(_require_api_key),
     session: Session = Depends(get_session),
 ) -> dict:

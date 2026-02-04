@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlmodel import Session
 
@@ -37,19 +37,22 @@ class ChatResponse(BaseModel):
     citations: List[Citation]
 
 
-def _require_api_key(x_api_key: str) -> None:
+def _require_api_key(
+    x_api_key: str = Header(..., alias="X-API-Key"),
+) -> None:
     if x_api_key != settings.api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid API key",
         )
+    return None
 
 
 @router.post("/v1/chat", response_model=ChatResponse)
 def chat_with_documents(
     payload: ChatRequest,
-    x_api_key: str,
-    x_workspace_id: str,
+    x_api_key: str = Header(..., alias="X-API-Key"),
+    x_workspace_id: str = Header(..., alias="X-Workspace-Id"),
     session: Session = Depends(get_session),
 ) -> ChatResponse:
     _require_api_key(x_api_key)
